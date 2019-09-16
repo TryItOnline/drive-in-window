@@ -27,16 +27,24 @@ def _find_getch():
         return msvcrt.getch
 
     # POSIX system. Create and return a getch that manipulates the tty.
-    import sys, tty
-    def _getch():
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
+    import sys
+
+    if sys.stdin.isatty():
+        import tty
+
+        def _getch():
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(fd)
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            return ch
+
+    else:
+        def _getch():
+            return sys.stdin.read(1)
 
     return _getch
 
